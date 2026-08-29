@@ -1,6 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // Required from Kotlin 2.0 onward: the Compose compiler was unbundled from Kotlin's
+    // tooling and now needs this plugin applied explicitly (composeOptions.kotlinCompiler-
+    // ExtensionVersion no longer does anything). Without it, buildFeatures.compose = true
+    // fails at build configuration time.
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
 
