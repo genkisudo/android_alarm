@@ -12,5 +12,5 @@ import com.silentalarm.app.scheduling.AlarmScheduler
 class AppGraph(appContext: Context) {
     private val database = AlarmDatabase.create(appContext)
     val scheduler = AlarmScheduler(appContext)
-    val repository = AlarmRepository(database.alarmDao(), scheduler)
+    val repository = AlarmRepository(appContext, database.alarmDao(), scheduler)
 }

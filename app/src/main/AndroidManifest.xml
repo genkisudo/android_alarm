@@ -30,11 +30,36 @@
         </activity>
 
         <!-- directBootAware: must run before first unlock so a reboot the user never unlocks
-             still fires alarms (SPEC.md Assumption A8, test T16). Behavior lands in Phase 2. -->
+             still fires alarms (SPEC.md Assumption A8, test T16). -->
         <receiver
             android:name=".fire.AlarmReceiver"
             android:directBootAware="true"
             android:exported="false" />
+
+        <!-- System-triggered firing screen (SPEC.md #4.3), not a user-navigable destination.
+             showWhenLocked/turnScreenOn bring it up over the lock screen with the screen off;
+             excludeFromRecents + singleInstance keep it out of the task switcher. -->
+        <activity
+            android:name=".fire.AlarmActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.SilentAlarm.Firing" />
+
+        <!-- Holds the vibration + firing notification (SPEC.md #5). specialUse is the
+             foreground-service type for a use case with no dedicated Android type; exact
+             alarms are exempt from the background-FGS-start restriction that would otherwise
+             block starting this from a broadcast receiver (SPEC.md Assumption A9). -->
+        <service
+            android:name=".fire.AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="alarm" />
+        </service>
 
     </application>
 </manifest>
