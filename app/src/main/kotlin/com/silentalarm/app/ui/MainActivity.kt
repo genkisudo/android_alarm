@@ -6,13 +6,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.silentalarm.app.SilentAlarmApp
+import com.silentalarm.app.ui.edit.AlarmEditScreen
+import com.silentalarm.app.ui.list.AlarmListScreen
 import com.silentalarm.app.ui.theme.SilentAlarmTheme
 import kotlinx.coroutines.launch
 
@@ -38,8 +40,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SilentAlarmTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Text("Silent Alarm")
+                var screen by remember { mutableStateOf<Screen>(Screen.List) }
+                when (val current = screen) {
+                    is Screen.List -> AlarmListScreen(
+                        repository = graph.repository,
+                        onAddAlarm = { screen = Screen.Edit(null) },
+                        onEditAlarm = { id -> screen = Screen.Edit(id) },
+                    )
+                    is Screen.Edit -> AlarmEditScreen(
+                        repository = graph.repository,
+                        alarmId = current.alarmId,
+                        onDone = { screen = Screen.List },
+                    )
                 }
             }
         }
