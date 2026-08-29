@@ -25,6 +25,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,12 +33,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.silentalarm.app.data.AlarmEntity
 import com.silentalarm.app.data.AlarmRepository
+import com.silentalarm.app.setup.SetupChecks
 import com.silentalarm.app.ui.formatTime
 import com.silentalarm.app.ui.weekdaySummary
 import kotlinx.coroutines.launch
@@ -55,6 +59,18 @@ fun AlarmListScreen(
     val alarms by repository.observeAll().collectAsState(initial = emptyList())
     var pendingDelete by remember { mutableStateOf<AlarmEntity?>(null) }
 
+    // Re-evaluated on every resume, since the user may have just come back from a settings
+    // screen the banner sent them to (SPEC.md #4.1: "re-appears if a condition regresses").
+    var setupState by remember { mutableStateOf(SetupChecks.evaluate(context)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) setupState = SetupChecks.evaluate(context)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = onAddAlarm) {
@@ -62,23 +78,28 @@ fun AlarmListScreen(
             }
         },
     ) { padding ->
-        if (alarms.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No alarms yet. Tap + to add one.")
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            if (setupState.needsAttention) {
+                SetupBanner(state = setupState, onAcknowledgeMiui = { setupState = SetupChecks.evaluate(context) })
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp),
-            ) {
-                items(alarms, key = { it.id }) { alarm ->
-                    AlarmRow(
-                        alarm = alarm,
-                        timeText = formatTime(context, alarm.hour, alarm.minute),
-                        onClick = { onEditAlarm(alarm.id) },
-                        onLongClick = { pendingDelete = alarm },
-                        onToggle = { enabled -> scope.launch { repository.setEnabled(alarm.id, enabled) } },
-                    )
+            if (alarms.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No alarms yet. Tap + to add one.")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                ) {
+                    items(alarms, key = { it.id }) { alarm ->
+                        AlarmRow(
+                            alarm = alarm,
+                            timeText = formatTime(context, alarm.hour, alarm.minute),
+                            onClick = { onEditAlarm(alarm.id) },
+                            onLongClick = { pendingDelete = alarm },
+                            onToggle = { enabled -> scope.launch { repository.setEnabled(alarm.id, enabled) } },
+                        )
+                    }
                 }
             }
         }

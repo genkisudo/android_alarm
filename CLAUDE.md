@@ -4,12 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-This repository contains **specification and build-plan documents only — no application code yet**. There is no Gradle project, no build/lint/test commands to run. Before writing any code, read:
+All six BUILD_PLAN.md phases are implemented (two Gradle modules: `scheduling/`, `app/`). **None of it has been compiled or run**: this has so far only been developed in a sandbox with no Android SDK, whose network policy also blocks `dl.google.com` (where Gradle's `google()` repository resolves the Android Gradle Plugin from) — confirmed by an actual failed dependency resolution, not assumed. If you're running somewhere with a real Android SDK and normal network access, that constraint doesn't apply to you — actually build and run it rather than continuing to treat it as unverified.
 
 - `docs/SPEC.md` — the full product spec: goals/non-goals, assumptions, screens, fire/dismiss behavior, weekly/timezone/reboot rules, permissions, MIUI setup steps, data model, and 36 numbered test cases (T1–T36).
 - `docs/BUILD_PLAN.md` — six build phases (0–5) with acceptance checks tied to those test cases, and the v1 "done" criteria.
 
-When code is added, this file should be updated with real build/lint/test commands and any architecture that emerges from actual implementation choices — don't invent commands ahead of that.
+### Commands
+
+- `./gradlew :scheduling:test` — runs today, no Android SDK needed. Covers SPEC.md test cases T1–T8 (the next-occurrence pure function), including real DST transitions.
+- `./gradlew :app:assembleDebug` / `:app:lint` — needs a real Android SDK; unverified in this repo's development sandbox (see above).
+- `./scripts/check_no_audio_apis.sh` — greps `app/src` for audio-playback APIs and bundled audio assets; run it after touching anything under `app/src`, not just before committing. It has been proven to actually fail (not just pass vacuously) against a deliberately introduced `MediaPlayer` import.
+- No instrumented/on-device tests exist yet. SPEC.md test cases T10–T36 are manual, on-device tests to run once real hardware or an emulator is available.
 
 ## What the app is
 
@@ -35,4 +40,4 @@ Build Plan phases are sequenced deliberately so platform risk is retired before 
 
 ## MIUI/Xiaomi specifics
 
-The target device has aggressive OEM power management that no in-app code can fully override (autostart, battery restrictions, background pop-up permission, lock-screen display, DND alarm exception). SPEC.md §8 lists the exact settings paths the user must configure by hand; the app's job is to detect what it can (notification permission, full-screen-intent permission) and guide the user to the rest via a setup checklist banner on the list screen — not to attempt to bypass OEM restrictions programmatically.
+The target device has aggressive OEM power management that no in-app code can fully override (autostart, battery restrictions, background pop-up permission, lock-screen display, DND alarm exception). SPEC.md §8 lists the exact settings paths the user must configure by hand; the app's job is to detect what it can (notification permission, full-screen-intent permission — `app/src/main/kotlin/com/silentalarm/app/setup/SetupChecks.kt`) and guide the user to the rest via a setup checklist banner on the list screen (`ui/list/SetupBanner.kt`) — not to attempt to bypass OEM restrictions programmatically.
