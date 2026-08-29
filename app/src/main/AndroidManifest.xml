@@ -29,5 +29,12 @@
             </intent-filter>
         </activity>
 
+        <!-- directBootAware: must run before first unlock so a reboot the user never unlocks
+             still fires alarms (SPEC.md Assumption A8, test T16). Behavior lands in Phase 2. -->
+        <receiver
+            android:name=".fire.AlarmReceiver"
+            android:directBootAware="true"
+            android:exported="false" />
+
     </application>
 </manifest>
