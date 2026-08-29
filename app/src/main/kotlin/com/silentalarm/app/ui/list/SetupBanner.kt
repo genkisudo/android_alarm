@@ -10,10 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -135,9 +133,12 @@ private fun MiuiChecklistDialog(onDismiss: () -> Unit, onDone: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { Text("MIUI setup checklist") },
         text = {
-            LazyColumn {
-                items(MIUI_CHECKLIST.size) { index ->
-                    val item = MIUI_CHECKLIST[index]
+            // A plain Column, not LazyColumn: AlertDialog's text slot is already wrapped in a
+            // Column.verticalScroll() by Material3, which gives it unbounded height - nesting
+            // a LazyColumn (which needs a bounded viewport) in that throws at runtime. Eight
+            // static items don't need virtualization anyway.
+            Column {
+                for (item in MIUI_CHECKLIST) {
                     Column(modifier = Modifier.padding(vertical = 8.dp)) {
                         Text(item.title, style = MaterialTheme.typography.titleSmall)
                         Text(item.detail, style = MaterialTheme.typography.bodySmall)

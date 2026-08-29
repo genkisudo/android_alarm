@@ -83,12 +83,15 @@ fun AlarmListScreen(
                 SetupBanner(state = setupState, onAcknowledgeMiui = { setupState = SetupChecks.evaluate(context) })
             }
             if (alarms.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                // weight(1f), not fillMaxSize(): as the second child of this Column (after the
+                // banner, when shown), fillMaxSize() would be measured against the Column's
+                // full height rather than the space actually left over, overflowing below it.
+                Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                     Text("No alarms yet. Tap + to add one.")
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     contentPadding = PaddingValues(vertical = 8.dp),
                 ) {
                     items(alarms, key = { it.id }) { alarm ->
