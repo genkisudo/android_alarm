@@ -1,6 +1,6 @@
 # Silent Alarm — Specification
 
-Target device: Redmi Note 15, Android 15 (API 35), HyperOS 2.
+Target device: Redmi Note 11 Pro, Android 13 (API 33), MIUI 14.
 Stack: native Kotlin, single app module, Jetpack Compose + Room. No Flutter, no React Native.
 
 ---
@@ -23,7 +23,7 @@ Stack: native Kotlin, single app module, Jetpack Compose + Room. No Flutter, no 
 - G3. Vibration-only output. No audio path exists anywhere in the app.
 - G4. Dismiss from the notification action **or** an on-screen button; both do the same thing.
 - G5. Enable / disable / delete alarms from one list.
-- G6. Survive Xiaomi/HyperOS power management, with in-app guidance to the settings the user must change by hand.
+- G6. Survive Xiaomi/MIUI power management, with in-app guidance to the settings the user must change by hand.
 - G7. Exactly two user-authored screens: list and add/edit. (The alarm-firing screen is system-triggered output, not a third place the user navigates to.)
 
 ### Non-goals
@@ -51,7 +51,7 @@ Recorded so the smallest design can be justified. Each one is cheap to reverse l
 - A6. **Vibration auto-stops after 120 seconds** if nobody dismisses. The occurrence is then treated as dismissed and the next one is scheduled. Prevents an indefinite vibration draining the battery in a bag.
 - A7. **Fixed vibration pattern for all alarms:** 1000 ms on / 1000 ms off, repeating, maximum amplitude, `VibrationAttributes.USAGE_ALARM`. Not configurable.
 - A8. **The alarm database lives in device-protected storage.** It holds only times and weekday bits — nothing sensitive — so putting it in DE storage lets the scheduler run before the first unlock after a reboot (Direct Boot). This is what makes "fires after reboot" true even if the user never unlocks.
-- A9. **Firing is held by a foreground service** of type `specialUse` (subtype `alarm`), started from the alarm broadcast. Exact alarms grant a temporary exemption from background foreground-service-start restrictions, which is why this is legal on Android 15.
+- A9. **Firing is held by a foreground service** of type `specialUse` (subtype `alarm`), started from the alarm broadcast. Exact alarms grant a temporary exemption from background foreground-service-start restrictions, which is why this is legal on Android 13.
 - A10. **Only the next occurrence of each alarm is scheduled** in `AlarmManager` at any time — one `PendingIntent` per alarm, keyed by alarm id. Rescheduling happens on dismiss, on edit, on boot, and on time/timezone change.
 - A11. **At least one weekday is required.** An alarm with zero days cannot be saved.
 - A12. **Duplicate alarms are allowed.** Two alarms at the same time on the same day are a valid (if pointless) state; §5 defines what happens when they fire together.
@@ -64,7 +64,7 @@ Recorded so the smallest design can be justified. Each one is cheap to reverse l
 
 ### 4.1 Alarm list (start destination)
 
-- **Setup banner** (top, conditional): shown only when a readiness check fails — notifications denied, full-screen intent not permitted, or the user has not yet acknowledged the HyperOS checklist. Tapping it opens the relevant system settings screen (or the in-banner checklist for the HyperOS items). Dismissible with "Done"; re-appears if a system-checkable condition regresses. This is a card inside the list screen, not a screen.
+- **Setup banner** (top, conditional): shown only when a readiness check fails — notifications denied, full-screen intent not permitted, or the user has not yet acknowledged the MIUI checklist. Tapping it opens the relevant system settings screen (or the in-banner checklist for the MIUI items). Dismissible with "Done"; re-appears if a system-checkable condition regresses. This is a card inside the list screen, not a screen.
 - **Alarm rows**, sorted by time of day ascending, then by id:
   - Time, large, in the user's 12/24-hour system format.
   - Weekday summary line: `Mon Tue Wed Thu Fri` style, or `Every day` / `Weekdays` / `Weekends` when the set matches.
@@ -188,43 +188,43 @@ App start · alarm created / edited / deleted / toggled · dismiss (including au
 
 **Deliberately not requested:**
 - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` — `setAlarmClock` is already Doze-exempt, and the restriction that actually matters on this device is Xiaomi's own, which no manifest permission unlocks. The setup flow sends the user to the system list instead (`ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`).
-- `SYSTEM_ALERT_WINDOW` — not needed; the full-screen intent covers showing the alarm screen. (The MIUI "pop-up windows in background" toggle in §8 is a HyperOS setting, not this permission.)
+- `SYSTEM_ALERT_WINDOW` — not needed; the full-screen intent covers showing the alarm screen. (The MIUI "pop-up windows in background" toggle in §8 is a MIUI setting, not this permission.)
 - `WAKE_LOCK` — the foreground service plus `FLAG_TURN_SCREEN_ON` / `setShowWhenLocked` on the firing activity are sufficient; no manual wake lock.
 - `SCHEDULE_EXACT_ALARM` — superseded by `USE_EXACT_ALARM` at minSdk 33.
 - Internet, storage, location, contacts — nothing in the app touches them. The app declares **no** `INTERNET` permission, which is also the cheapest possible proof that there is no cloud.
 
 ---
 
-## 8. Xiaomi / HyperOS 2 setup the user must do
+## 8. Xiaomi / MIUI 14 setup the user must do
 
-These are OEM restrictions that no app-side code can override. The setup banner (§4.1) walks through them as a checklist with deep links where HyperOS exposes one; the rest are manual. Paths are for HyperOS 2 on a Redmi Note 15 and may be worded slightly differently after an OTA.
+These are OEM restrictions that no app-side code can override. The setup banner (§4.1) walks through them as a checklist with deep links where MIUI exposes one; the rest are manual. Paths are for MIUI 14 on a Redmi Note 11 Pro and may be worded slightly differently on other MIUI 14 builds.
 
 1. **Autostart — ON.**
-   `Settings → Apps → Manage apps → Silent Alarm → Autostart`.
-   Without this, HyperOS may drop `BOOT_COMPLETED` and background broadcasts. This is the single most common reason alarms stop firing on Xiaomi.
+   `Security app → App Manager → Permissions → Autostart → Silent Alarm → ON` (MIUI keeps this in the Security app, not Settings). If that path is missing on a given build, fall back to `Settings → Apps → Manage apps → Silent Alarm → Autostart`.
+   Without this, MIUI may drop `BOOT_COMPLETED` and background broadcasts. This is the single most common reason alarms stop firing on Xiaomi.
 2. **Battery saver → "No restrictions".**
    `Settings → Apps → Manage apps → Silent Alarm → Battery saver → No restrictions`.
-   Not "Battery saver", not "Restricted".
+   Not "Battery saver", not "Restricted". (Reachable from the Security app's battery section too: `Security app → Battery → App battery saver → Silent Alarm → No restrictions`.)
 3. **Lock the app in Recents.**
    Open Recents, swipe down on the Silent Alarm card (or long-press) → padlock.
-   Stops HyperOS memory cleanup from killing the process on a "boost".
+   Stops MIUI memory cleanup from killing the process on a "boost".
 4. **Other permissions → "Display pop-up windows while running in background" — ON.**
    `Settings → Apps → Manage apps → Silent Alarm → Other permissions`.
-   This is what lets the full-screen alarm activity appear from the background on MIUI/HyperOS.
+   This is what lets the full-screen alarm activity appear from the background on MIUI.
 5. **Other permissions → "Show on Lock screen" — ON.**
    So the alarm screen can appear over the keyguard.
 6. **Notifications — allowed, floating enabled, shown on lock screen.**
    `Settings → Notifications → App notifications → Silent Alarm` → allow, then open the *Alarm* channel and enable "Floating notifications" and "Lock screen notifications".
 7. **Do Not Disturb must allow alarms.**
    `Settings → Sound & vibration → Do Not Disturb → Exceptions/Allow → Alarms — ON`.
-   HyperOS allows alarms by default; verify, because the vibration is classified as `USAGE_ALARM` and is filtered by exactly this switch. Optionally add Silent Alarm to the DND app exceptions so the notification is not hidden.
+   MIUI allows alarms by default; verify, because the vibration is classified as `USAGE_ALARM` and is filtered by exactly this switch. Optionally add Silent Alarm to the DND app exceptions so the notification is not hidden.
 8. **Vibration is actually enabled.**
    `Settings → Sound & vibration` → confirm "Vibrate in silent mode" is on and haptic/vibration intensity is not at zero. On a silent-mode-only phone, alarm-usage vibration is what carries the whole product.
 9. **Automatic date, time and timezone — ON.**
    `Settings → Additional settings → Date & time`. Manual clock drift will move alarms.
 10. **Do not enable Ultra battery saver overnight.**
-    HyperOS's ultra/extreme saver suspends third-party apps wholesale and will drop alarms. Standard "Battery saver" is fine given step 2.
-11. **Never "Force stop" the app** from app info, and do not add it to any cleaner's kill list. Force-stop cancels all scheduled alarms until the app is opened again (A14).
+    MIUI's ultra/extreme saver suspends third-party apps wholesale and will drop alarms. Standard "Battery saver" is fine given step 2.
+11. **Never "Force stop" the app** from app info, and do not add it to any cleaner's (Security app's "Clean up" boost) kill list. Force-stop cancels all scheduled alarms until the app is opened again (A14).
 12. *(Last resort only, if alarms still miss after all of the above.)* Disabling "MIUI optimization" in Developer options is a known workaround for aggressive process management, but it changes system-wide behavior and should be treated as a diagnostic step, not part of normal setup.
 
 ---
@@ -254,7 +254,7 @@ Version 1, no migrations expected. If the schema ever changes, `fallbackToDestru
 
 ## 10. Test cases
 
-Every case below is a manual on-device test on the target Redmi Note 15 unless marked *(unit)*. Automated coverage is limited to the next-occurrence function, which is where the real logic lives.
+Every case below is a manual on-device test on the target Redmi Note 11 Pro unless marked *(unit)*. Automated coverage is limited to the next-occurrence function, which is where the real logic lives.
 
 ### Scheduling logic *(unit tests, fixed clock + fixed zone)*
 | # | Case | Expected |

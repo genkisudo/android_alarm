@@ -17,7 +17,7 @@ Scope:
 - A repo-level check script that fails on any audio API reference (`MediaPlayer|Ringtone|RingtoneManager|SoundPool|AudioManager|ToneGenerator|AudioFocus`) — the mechanical enforcement of G3/N3.
 
 Acceptance:
-- [ ] `./gradlew assembleDebug lint` passes; APK installs on the Redmi Note 15 and launches to an empty screen.
+- [ ] `./gradlew assembleDebug lint` passes; APK installs on the Redmi Note 11 Pro and launches to an empty screen.
 - [ ] The audio-freeness check runs and **fails** when a `MediaPlayer` reference is deliberately added, then passes when removed. (Prove the guard works before trusting it — this is T24's mechanism.)
 - [ ] No `INTERNET` permission in the merged manifest (`./gradlew :app:processDebugMainManifest` output inspected).
 
@@ -96,10 +96,10 @@ Acceptance:
 
 ---
 
-### Phase 5 — HyperOS readiness and soak
+### Phase 5 — MIUI readiness and soak
 
 Scope:
-- Setup banner per SPEC §4.1: runtime checks for notification permission and `canUseFullScreenIntent()`, plus a manual checklist mirroring SPEC §8 with deep links where HyperOS exposes an intent and plain instructions where it does not. Every deep link is wrapped so a missing activity falls back to the app's system settings page rather than crashing.
+- Setup banner per SPEC §4.1: runtime checks for notification permission and `canUseFullScreenIntent()`, plus a manual checklist mirroring SPEC §8 with deep links where MIUI exposes an intent and plain instructions where it does not. Every deep link is wrapped so a missing activity falls back to the app's system settings page rather than crashing.
 - Written setup instructions (SPEC §8) in the repo README.
 - No new features. This phase is mostly device time.
 
@@ -114,7 +114,7 @@ Acceptance:
 
 ## 12. v1 is done when…
 
-All of the following are true, each verified on the Redmi Note 15 running HyperOS 2 — not on an emulator, not on another device:
+All of the following are true, each verified on the Redmi Note 11 Pro running MIUI 14 — not on an emulator, not on another device:
 
 1. **Weekly alarms work end to end.** Create, edit, enable/disable, and delete from one list screen and one add/edit screen. Nothing else exists in the app.
 2. **T1–T36 all pass**, with T14 and T20 passing as documented limitations rather than fixes.
@@ -122,7 +122,7 @@ All of the following are true, each verified on the Redmi Note 15 running HyperO
 4. **It has vibrated correctly on five consecutive nights** in the overnight soak (T13), on a phone that was used normally and left unplugged.
 5. **It has never made a sound.** The static audio audit is clean, the APK ships no audio assets, the notification channel's sound is explicitly null, and playing media is never interrupted (T23, T24).
 6. **Dismiss works from both places** — notification action and on-screen button — and always leaves the alarm scheduled for its next weekday (T28, T31).
-7. **The HyperOS checklist is complete and honest**: every item in SPEC §8 is either deep-linked or spelled out, and the app tells the user when a check it *can* see is failing.
+7. **The MIUI checklist is complete and honest**: every item in SPEC §8 is either deep-linked or spelled out, and the app tells the user when a check it *can* see is failing.
 8. **The permission set is exactly SPEC §7** — nothing extra, and no `INTERNET` permission.
 9. **The persisted model is exactly SPEC §9's five fields.** Any extra column means scope crept.
 10. **Assumptions A1–A14 are still accurate**, or the ones that changed have been rewritten in SPEC.md to match what was actually built.

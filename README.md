@@ -2,11 +2,11 @@
 
 A vibration-only weekly alarm clock for Android. Native Kotlin.
 
-Target device: Redmi Note 15, Android 15, HyperOS 2.
+Target device: Redmi Note 11 Pro, Android 13, MIUI 14.
 
 **Status: specification only. No code yet.**
 
-- [docs/SPEC.md](docs/SPEC.md) — product, goals/non-goals, assumptions, screens, fire/dismiss behavior, weekly/timezone/reboot rules, permissions, HyperOS setup, data model, test cases, open questions.
+- [docs/SPEC.md](docs/SPEC.md) — product, goals/non-goals, assumptions, screens, fire/dismiss behavior, weekly/timezone/reboot rules, permissions, MIUI setup, data model, test cases, open questions.
 - [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) — six build phases with acceptance checks, and the v1 done criteria.
 
 ## What it does
